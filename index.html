@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Night Stalker: Haunted Heist (ขโมยล่าท้าผี)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=VT323&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Main 2D Pixel Game Canvas -->
+    <div id="game-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Retro CRT Scanlines & Screen Glitch Filter -->
+      <div id="crt-scanlines" class="crt-overlay"></div>
+      <div id="vignette-overlay" class="vignette"></div>
+
+      <!-- ============================================== -->
+      <!-- 1. FNAF RETRO ANALOG HORROR MAIN MENU OVERLAY -->
+      <!-- ============================================== -->
+      <div id="menu-overlay" class="ui-layer">
+        <!-- Safehouse Live Canvas (Thief chilling on right, CCTV on left) -->
+        <canvas id="menu-bg-canvas"></canvas>
+
+        <div class="menu-content-grid">
+          <!-- Left Side: Analog Glitch Menu Buttons -->
+          <div class="menu-left-panel">
+            <div class="game-logo-box">
+              <div class="rec-dot-indicator"><span class="blink-dot"></span> REC &bull; TAPE_04</div>
+              <h1 class="glitch-title" data-text="NIGHT STALKER">NIGHT STALKER</h1>
+              <div class="sub-title">ABANDONED HEIST &bull; ขโมยล่าท้าผี</div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="menu-stats-bar">
+              <div class="stat-pill">
+                <span class="label">CURRENT</span>
+                <span id="menu-current-night" class="val text-gold">NIGHT 1</span>
+              </div>
+              <div class="stat-pill">
+                <span class="label">QUOTA</span>
+                <span id="menu-target-quota" class="val text-green">$250</span>
+              </div>
+              <div class="stat-pill">
+                <span class="label">CASH</span>
+                <span id="menu-cash-balance" class="val text-cyan">$150</span>
+              </div>
+            </div>
+
+            <!-- Map Selection Box -->
+            <div class="map-selection-box">
+              <div class="map-sel-title">🗺️ เลือกสถานที่ปล้น (SELECT MAP):</div>
+              <div class="map-sel-buttons">
+                <button class="map-btn active" data-map="manor">
+                  <span class="map-ico">🏰</span>
+                  <span class="map-lbl">คฤหาสน์โรงพยาบาลร้าง (Asylum Manor)</span>
+                </button>
+                <button class="map-btn" data-map="catacombs">
+                  <span class="map-ico">💀</span>
+                  <span class="map-lbl">สุสานโบราณมืด (Occult Catacombs)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="menu-actions-list">
+              <button id="btn-start-game" class="retro-btn btn-primary-heist">
+                <span class="btn-icon">⚡</span>
+                <span class="btn-text">START HEIST (เริ่มปล้น)</span>
+              </button>
+
+              <button id="btn-open-shop" class="retro-btn">
+                <span class="btn-icon">🛒</span>
+                <span class="btn-text">BLACK MARKET (ร้านค้ามืด)</span>
+              </button>
+
+              <button id="btn-open-settings" class="retro-btn">
+                <span class="btn-icon">⚙️</span>
+                <span class="btn-text">SETTINGS (ตั้งค่าเสียง & กราฟิก)</span>
+              </button>
+
+              <button id="btn-open-controls" class="retro-btn">
+                <span class="btn-icon">📖</span>
+                <span class="btn-text">CONTROLS (วิธีเล่น)</span>
+              </button>
+
+              <button id="btn-reset-data" class="retro-btn btn-danger-small">
+                <span>⚠️ รีเซ็ตเซฟข้อมูล</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Side: Safehouse Atmosphere & Camera Label -->
+          <div class="menu-right-panel">
+            <div class="cam-feed-label">
+              <span>● SAFE HOUSE LOUNGE [CAM-03]</span>
+              <span class="timestamp" id="menu-clock">02:44:19 AM</span>
+            </div>
+            <div class="safehouse-hint">
+              "พักผ่อนและเตรียมอุปกรณ์ให้พร้อม... เลือกสถานที่แล้วออกลุยคืนนี้"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 2. BLACK MARKET & UPGRADES MODAL -->
+      <!-- ============================================== -->
+      <div id="shop-modal" class="modal-overlay hidden">
+        <div class="modal-card shop-window">
+          <div class="modal-header">
+            <div class="header-left">
+              <h2>🛒 BLACK MARKET (ตลาดมืด)</h2>
+              <span class="sub">ซื้ออุปกรณ์ & อัปเกรดขีดความสามารถ</span>
+            </div>
+            <div class="wallet-badge">
+              <span>เงินของคุณ: </span>
+              <strong id="shop-cash-balance" class="text-gold">$150</strong>
+            </div>
+            <button class="btn-close-modal">&times;</button>
+          </div>
+
+          <div class="shop-tabs">
+            <button id="tab-equipment" class="shop-tab-btn active">📦 อุปกรณ์ & ไอเทมเสริม</button>
+            <button id="tab-upgrades" class="shop-tab-btn">⚡ อัปเกรดความสามารถถาวร</button>
+          </div>
+
+          <div class="modal-body shop-body">
+            <div id="shop-list-equipment" class="shop-cards-container"></div>
+            <div id="shop-list-upgrades" class="shop-cards-container hidden"></div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="retro-btn btn-close-modal">กลับสู่หน้าหลัก</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 3. SETTINGS MODAL -->
+      <!-- ============================================== -->
+      <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-card settings-window">
+          <div class="modal-header">
+            <h2>⚙️ SETTINGS (ตั้งค่าระบบ)</h2>
+            <button class="btn-close-modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="settings-group">
+              <h3>🔊 การตั้งค่าเสียง (AUDIO)</h3>
+              <div class="setting-row">
+                <label>เสียงโดยรวม (Master Volume)</label>
+                <input type="range" id="slider-master-volume" min="0" max="1" step="0.05" value="0.8" />
+              </div>
+              <div class="setting-row">
+                <label>เสียงเอฟเฟกต์ (SFX Volume)</label>
+                <input type="range" id="slider-sfx-volume" min="0" max="1" step="0.05" value="0.9" />
+              </div>
+              <div class="setting-row">
+                <label>เสียงบรรยากาศ & เพลงหลอน (BGM)</label>
+                <input type="range" id="slider-bgm-volume" min="0" max="1" step="0.05" value="0.6" />
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>🖥️ การตั้งค่ากราฟิก (VIDEO & FX)</h3>
+              <div class="setting-row toggle-row">
+                <label>เส้นสแกนหลอนแบบยุค 90s (CRT Scanlines)</label>
+                <input type="checkbox" id="toggle-crt" checked />
+              </div>
+              <div class="setting-row toggle-row">
+                <label>ประกายแสงหลอน (Pixel Bloom / Glow)</label>
+                <input type="checkbox" id="toggle-bloom" checked />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="retro-btn btn-close-modal">บันทึก & ปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 4. HOW TO PLAY & CONTROLS MODAL -->
+      <!-- ============================================== -->
+      <div id="controls-modal" class="modal-overlay hidden">
+        <div class="modal-card controls-window">
+          <div class="modal-header">
+            <h2>📖 วิธีเล่น & ปุ่มควบคุม</h2>
+            <button class="btn-close-modal">&times;</button>
+          </div>
+          <div class="modal-body controls-grid">
+            <div class="ctrl-card">
+              <span class="ctrl-key">W / A / S / D (หรือ ปุ่มลูกศร / ไ,ฟ,ห,ก)</span>
+              <span class="ctrl-desc">เดินสำรวจในบ้านร้าง 8 ทิศทาง</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">SPACE</span>
+              <span class="ctrl-desc"><strong>กระโดด (JUMP)</strong> ข้ามเศษกระจกและไม้หักบนพื้น</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">SHIFT</span>
+              <span class="ctrl-desc">วิ่งเร็ว Sprint (ใช้ค่า Stamina)</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">E (หรือ ำ)</span>
+              <span class="ctrl-desc">เก็บของ / <strong>ซ่อนในตู้</strong> / เปิดประตู / ส่งของขึ้นรถ</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">F (หรือ ด)</span>
+              <span class="ctrl-desc">เปิด / ปิด ไฟฉาย (ประหยัดแบตเตอรี่)</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">MOUSE CLICK</span>
+              <span class="ctrl-desc"><strong>ยิงปืนช็อตผี Stun Taser</strong> (สตั้นผี 4 วินาที)</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">Q (หรือ ๆ)</span>
+              <span class="ctrl-desc">ทิ้งของที่หนักที่สุด เพื่อให้วิ่งหนีผีได้เร็วขึ้น</span>
+            </div>
+            <div class="ctrl-card">
+              <span class="ctrl-key">1 / 2</span>
+              <span class="ctrl-desc">ใช้ยาบัฟ Adrenaline / ชาร์จแบตไฟฉาย</span>
+            </div>
+          </div>
+          <div class="rules-box">
+            <h4>💡 กฎเหล็กในการเอาชีวิตรอด:</h4>
+            <ul>
+              <li>ยิ่งกระเป๋าหนัก คุณจะยิ่ง<strong>เดินช้าลง</strong>และฝีเท้าจะเสียงดังขึ้น!</li>
+              <li>ทุกครั้งที่หยิบของ มีโอกาส <strong>10%</strong> ที่คำสาปจะทำงานและผีจะเริ่มออกล่าทันที!</li>
+              <li>ถ้าผีไล่ล่า ให้รีบวิ่งไปกด <strong>E ซ่อนในตู้</strong> หรือใช้ <strong>Stun Gun</strong> ช็อตผี</li>
+              <li>ขนของมาวางที่รถตู้ (VAN) ให้ครบตามยอด <strong>QUOTA</strong> แล้วกด E ที่รถเพื่อหลบหนี</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button class="retro-btn btn-close-modal">เข้าใจแล้ว ลุยเลย!</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 5. IN-GAME HUD OVERLAY -->
+      <!-- ============================================== -->
+      <div id="hud-container" class="ui-layer hidden">
+        <div class="hud-top-bar">
+          <div class="hud-box quota-box">
+            <div class="hud-title-row">
+              <span id="hud-night-number">NIGHT 01</span>
+              <span id="hud-quota-text">$0 / $250 QUOTA</span>
+            </div>
+            <div class="meter-bar">
+              <div id="hud-quota-fill" class="meter-fill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="hud-interact-prompt" class="interact-prompt">
+          <span class="key-badge">E</span> ค้นหาของ
+        </div>
+
+        <div class="hud-bottom-left">
+          <div class="stat-gauge">
+            <div class="gauge-label">🔦 BATTERY <span id="hud-battery-text">100%</span></div>
+            <div class="meter-bar small-bar">
+              <div id="hud-battery-fill" class="meter-fill fill-good" style="width: 100%"></div>
+            </div>
+          </div>
+
+          <div class="stat-gauge">
+            <div class="gauge-label">🏃 STAMINA</div>
+            <div class="meter-bar small-bar">
+              <div id="hud-stamina-fill" class="meter-fill fill-stamina" style="width: 100%"></div>
+            </div>
+          </div>
+
+          <div id="hud-taser-badge" class="taser-badge">
+            🔫 TASER: <span class="text-gold">3</span>
+          </div>
+        </div>
+
+        <div class="hud-bottom-right">
+          <div class="stat-gauge weight-gauge">
+            <div class="gauge-label">
+              🎒 BACKPACK <span id="hud-weight-text">0.0 / 14.0 kg</span>
+            </div>
+            <div class="meter-bar">
+              <div id="hud-weight-fill" class="meter-fill fill-good" style="width: 0%"></div>
+            </div>
+            <div id="hud-weight-alert" class="weight-alert"></div>
+          </div>
+
+          <div class="hud-hotbar">
+            <div class="hotbar-slot" title="Press 1 to use Adrenaline">
+              <span class="slot-key">[1]</span>
+              <span class="slot-icon">⚡</span>
+              <span class="slot-count" id="hotbar-adrenaline-count">1</span>
+            </div>
+            <div class="hotbar-slot" title="Press 2 to recharge Battery">
+              <span class="slot-key">[2]</span>
+              <span class="slot-icon">🔋</span>
+              <span class="slot-count" id="hotbar-battery-count">2</span>
+            </div>
+            <div class="hotbar-slot drop-slot" title="Press Q to Drop heaviest loot">
+              <span class="slot-key">[Q]</span>
+              <span class="slot-text">DROP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 6. EXTREME HORROR JUMPSCARE OVERLAY -->
+      <!-- ============================================== -->
+      <div id="jumpscare-overlay" class="jumpscare-layer hidden">
+        <div class="strobe-flash"></div>
+        <div class="screamer-container">
+          <canvas id="screamer-canvas" width="200" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 7. VICTORY / EXTRACTION MODAL -->
+      <!-- ============================================== -->
+      <div id="victory-modal" class="modal-overlay hidden">
+        <div class="modal-card victory-card">
+          <div class="modal-header">
+            <h2 id="vic-night-title" class="text-green">🎉 NIGHT SURVIVED!</h2>
+          </div>
+          <div class="modal-body">
+            <p>คุณส่งของครบตามโควต้าและหลบหนีออกมาได้อย่างปลอดภัย!</p>
+            <div class="vic-breakdown">
+              <h3>📦 สรุปรายการของที่ขายได้:</h3>
+              <div id="vic-loot-list" class="vic-loot-scroll"></div>
+            </div>
+            <div class="vic-profit-box">
+              <div class="profit-row">
+                <span>กำไรสุทธิคืนนี้:</span>
+                <strong id="vic-total-profit" class="text-gold">+$450</strong>
+              </div>
+              <div class="profit-row">
+                <span>ยอดเงินในบัญชีรวม:</span>
+                <strong id="vic-bank-balance" class="text-cyan">$600</strong>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer victory-actions">
+            <button id="btn-victory-shop" class="retro-btn">🛒 ไปอัปเกรดของที่ร้านค้า</button>
+            <button id="btn-victory-next" class="retro-btn btn-primary-heist">⚡ เริ่มปล้นคืนถัดไป (NEXT NIGHT)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 8. GAME OVER (CAUGHT BY GHOST) MODAL -->
+      <!-- ============================================== -->
+      <div id="gameover-modal" class="modal-overlay hidden">
+        <div class="modal-card gameover-card">
+          <div class="modal-header">
+            <h2 class="text-danger">☠️ YOU DIED</h2>
+          </div>
+          <div class="modal-body">
+            <div id="go-night-title" class="go-desc">คุณถูกผีจับตัวได้ในบ้านร้าง...</div>
+            <div id="go-lost-value" class="go-lost text-danger">สูญเสียของที่ปล้นมาทั้งหมด</div>
+            <p class="go-tip">คำแนะนำ: ใช้ Stun Gun ยิงช็อตผีเพื่อหยุดการเคลื่อนที่ และรีบวิ่งไปซ่อนในตู้!</p>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-gameover-retry" class="retro-btn btn-danger-small">🔄 ลองใหม่อีกครั้ง</button>
+            <button id="btn-gameover-menu" class="retro-btn">🏠 กลับหน้าเมนู</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
